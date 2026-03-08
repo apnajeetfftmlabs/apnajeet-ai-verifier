@@ -33,7 +33,6 @@ ultralytics==8.0.230
 scipy==1.11.4
 scikit-image==0.22.0
 
-# PyMuPDF - Fix version with pre-built wheel
-PyMuPDF==1.23.8
+# AI/ML - OCR - PyMuPDF hata diya (paddleocr apna le lega)
 paddlepaddle==2.6.2
 paddleocr==2.7.0.3
