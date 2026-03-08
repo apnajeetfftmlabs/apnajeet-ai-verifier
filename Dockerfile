@@ -30,5 +30,5 @@ COPY . .
 # Create upload directory
 RUN mkdir -p data/uploads
 
-# ✅ IMPORTANT: Command to run the application
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# ✅ FINAL FIX: Use Railway's PORT variable
+CMD uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}
