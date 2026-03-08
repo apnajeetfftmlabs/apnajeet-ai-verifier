@@ -1,20 +1,25 @@
-from ultralytics import YOLO
 import cv2
 import numpy as np
+import logging
 
-# Load pre-trained YOLOv8 model
-model = YOLO("yolov8n.pt")
+logger = logging.getLogger(__name__)
 
 def detect_text_regions(frame):
     """
-    Detect regions in frame that likely contain text.
-    Returns list of bounding boxes [x1, y1, x2, y2].
+    Simple region detection - divide frame into 3 horizontal sections
     """
-    height, width = frame.shape[:2]
-    # Divide frame into 3 sections
-    boxes = [
-        [0, 0, width, height//3],          # Top section (Profile)
-        [0, height//3, width, 2*height//3], # Middle (Email)
-        [0, 2*height//3, width, height]     # Bottom (Ad)
-    ]
-    return boxes
+    try:
+        height, width = frame.shape[:2]
+        
+        # Divide frame into 3 sections
+        regions = [
+            (0, 0, width, height//3),          # Top - Profile
+            (0, height//3, width, 2*height//3), # Middle - Email
+            (0, 2*height//3, width, height)     # Bottom - Ad
+        ]
+        
+        return regions
+        
+    except Exception as e:
+        logger.error(f"Region detection error: {str(e)}")
+        return []
