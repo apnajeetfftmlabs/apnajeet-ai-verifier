@@ -1,38 +1,31 @@
-# Core
-python-dotenv==1.0.0
-
-# Telegram Bot
-aiogram==3.3.0
-aiohttp==3.9.1
-
 # API
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 aiofiles==23.2.1
 
+# Telegram Bot
+aiogram==3.3.0
+aiohttp==3.9.1
+python-dotenv==1.0.0
+
 # Firebase
 firebase-admin==6.2.0
 
-# AI/ML - PyTorch
+# ML - Core
 torch==2.2.0
 torchvision==0.17.0
 
-# AI/ML - HuggingFace
-transformers==4.36.2
+# YOLO (optional - for future)
+# ultralytics==8.0.230
 
-# AI/ML - Computer Vision
+# OCR - Using EasyOCR (lighter than paddleocr)
+easyocr==1.7.1
+
+# Image Processing
 opencv-python-headless==4.8.1.78
 numpy==1.26.0
 Pillow==10.1.0
 
-# AI/ML - YOLO
-ultralytics==8.0.230
-
-# AI/ML - Image Processing
-scipy==1.11.4
-scikit-image==0.22.0
-
-# AI/ML - OCR
-paddlepaddle==2.6.2
-paddleocr==2.7.0.3
+# Utils
+python-dateutil==2.9.0.post0
