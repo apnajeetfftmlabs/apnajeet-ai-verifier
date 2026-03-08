@@ -1,23 +1,11 @@
-from fastapi import FastAPI
-import logging
-import sys
 import os
-
-logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
-logger = logging.getLogger(__name__)
+from fastapi import FastAPI
 
 app = FastAPI()
 
-@app.on_event("startup")
-async def startup():
-    logger.info("=" * 50)
-    logger.info("🚀 APP STARTING...")
-    logger.info(f"PORT: {os.getenv('PORT', '8000')}")
-    logger.info("=" * 50)
-
 @app.get("/")
 async def root():
-    return {"status": "ok"}
+    return {"status": "ok", "port": os.getenv("PORT", "8080")}
 
 @app.get("/health")
 async def health():
