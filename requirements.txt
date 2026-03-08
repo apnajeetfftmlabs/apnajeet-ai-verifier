@@ -9,17 +9,30 @@ aiohttp==3.9.1
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 python-multipart==0.0.6
+aiofiles==23.2.1
 
 # Firebase
 firebase-admin==6.2.0
 
-# AI/ML
+# AI/ML - PyTorch
 torch==2.2.0
 torchvision==0.17.0
+
+# AI/ML - HuggingFace
 transformers==4.36.2
-ultralytics==8.0.230
-paddleocr==2.7.0.3
-paddlepaddle==2.5.2
+
+# AI/ML - Computer Vision
 opencv-python==4.8.1.78
 numpy==1.24.3
 Pillow==10.1.0
+
+# AI/ML - YOLO
+ultralytics==8.0.230
+
+# AI/ML - OCR
+paddleocr==2.7.0.3
+paddlepaddle==2.6.2  # ✅ Python 3.12 compatible version
+
+# AI/ML - Others
+scipy==1.11.4
+scikit-image==0.22.0
