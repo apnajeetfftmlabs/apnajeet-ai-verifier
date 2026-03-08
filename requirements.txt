@@ -23,7 +23,7 @@ transformers==4.36.2
 
 # AI/ML - Computer Vision
 opencv-python==4.8.1.78
-numpy==1.24.3
+numpy==1.26.0          # ✅ ये line बदली है
 Pillow==10.1.0
 
 # AI/ML - YOLO
@@ -31,7 +31,7 @@ ultralytics==8.0.230
 
 # AI/ML - OCR
 paddleocr==2.7.0.3
-paddlepaddle==2.6.2  # ✅ Python 3.12 compatible version
+paddlepaddle==2.6.2
 
 # AI/ML - Others
 scipy==1.11.4
