@@ -1,31 +1,43 @@
+# Base image - Python 3.11 slim version
 FROM python:3.11-slim
 
-# System dependencies install kar
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
+    # Tesseract OCR
     tesseract-ocr \
     tesseract-ocr-eng \
     libtesseract-dev \
     libleptonica-dev \
+    # OpenCV dependencies
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    # Build tools
     build-essential \
+    cmake \
     swig \
-    libpcre3-dev \
-    zlib1g-dev \
-    libmupdf-dev \
-    libfreetype6-dev \
-    libopenjp2-7-dev \
-    libjbig2dec0-dev \
-    git \
+    pkg-config \
+    # Other
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-
-# Requirements copy kar aur install kar
+# Copy requirements first (for better caching)
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
 
-# Baaki code copy kar
+# Install Python packages
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy rest of the application
 COPY . .
 
-# Start command
+# Expose port for FastAPI
+EXPOSE 8000
+
+# Command to run the application
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
