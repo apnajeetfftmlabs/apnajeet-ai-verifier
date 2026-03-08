@@ -30,5 +30,5 @@ COPY . .
 # Create upload directory
 RUN mkdir -p data/uploads
 
-# ✅ FINAL FIX: Use shell form for variable expansion
-CMD uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# 🔥 FINAL FIX - Hardcoded port 8080
+CMD uvicorn api.main:app --host 0.0.0.0 --port 8080
