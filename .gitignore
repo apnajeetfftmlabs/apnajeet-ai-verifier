@@ -1,0 +1,21 @@
+# Environment
+.env
+*.pyc
+__pycache__/
+*.log
+
+# Data
+data/uploads/*
+!data/uploads/.gitkeep
+data/logs/*
+!data/logs/.gitkeep
+
+# Models
+models/*
+!models/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
