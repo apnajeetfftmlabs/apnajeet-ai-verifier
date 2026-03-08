@@ -22,8 +22,8 @@ torchvision==0.17.0
 transformers==4.36.2
 
 # AI/ML - Computer Vision
-opencv-python==4.8.1.78
-numpy==1.26.0          # ✅ ये line बदली है
+opencv-python==4.6.0.66          # ✅ ये बदला है
+numpy==1.26.0
 Pillow==10.1.0
 
 # AI/ML - YOLO
