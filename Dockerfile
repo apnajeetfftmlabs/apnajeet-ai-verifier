@@ -30,5 +30,5 @@ COPY . .
 # Create upload directory
 RUN mkdir -p data/uploads
 
-# 🔥 FINAL FIX - Hardcoded port 8080
-CMD uvicorn api.main:app --host 0.0.0.0 --port 8080
+# ✅ DIRECT FIX - Use 8000 directly
+CMD uvicorn api.main:app --host 0.0.0.0 --port 8000
