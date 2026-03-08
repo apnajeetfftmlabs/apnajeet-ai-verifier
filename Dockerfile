@@ -24,9 +24,9 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements
 COPY requirements.txt .
 
-# Install with pre-built wheels only (no compilation)
+# Install - WITHOUT --only-binary (taaki PyMuPDF compile ho sake)
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir --only-binary :all: -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
