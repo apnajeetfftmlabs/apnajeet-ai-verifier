@@ -19,3 +19,11 @@ models/*
 .idea/
 *.swp
 *.swo
+
+# Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
