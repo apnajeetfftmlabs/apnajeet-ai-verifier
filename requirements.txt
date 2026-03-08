@@ -29,10 +29,11 @@ Pillow==10.1.0
 # AI/ML - YOLO
 ultralytics==8.0.230
 
-# AI/ML - OCR
-paddleocr==2.7.0.3
-paddlepaddle==2.6.2
-
 # AI/ML - Image Processing
 scipy==1.11.4
 scikit-image==0.22.0
+
+# PyMuPDF - Fix version with pre-built wheel
+PyMuPDF==1.23.8
+paddlepaddle==2.6.2
+paddleocr==2.7.0.3
