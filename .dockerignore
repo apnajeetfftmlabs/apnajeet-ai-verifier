@@ -1,50 +1,54 @@
-# Git
-.git
-.gitignore
-.github
-
+# [Filename: .dockerignore]
 # Python
 __pycache__
 *.pyc
 *.pyo
 *.pyd
-.pytest_cache
-.coverage
-htmlcov
+.python
+*.so
+*.egg
 *.egg-info
 dist
 build
 
-# Virtual Environment
+# Environments
+.env
+.env.local
+.env.*.local
 venv
+.venv
 env
 ENV
 
-# Environment
-.env
-.env.local
-.env.production
-
-# Data
-data/uploads/
-data/logs/
-!data/uploads/.gitkeep
-!data/logs/.gitkeep
-
-# Models
-models/
-!models/.gitkeep
+# Git
+.git
+.gitignore
+.gitattributes
 
 # IDE
-.vscode/
-.idea/
+.vscode
+.idea
 *.swp
 *.swo
 
-# Docker
-Dockerfile
-.dockerignore
-docker-compose.yml
+# Tests
+tests/
+*.test.py
+*.spec.py
 
-# Railway
-railway.json
+# Data (except empty dir)
+data/uploads/*
+!data/uploads/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# README etc
+README.md
+LICENSE
+*.md
