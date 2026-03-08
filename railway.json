@@ -10,7 +10,11 @@
       "swig",
       "pcre",
       "pcre2",
-      "zlib"
+      "zlib",
+      "mupdf",
+      "freetype",
+      "openjpeg",
+      "jbig2dec"
     ],
     "aptPkgs": [
       "tesseract-ocr",
@@ -20,7 +24,11 @@
       "build-essential",
       "swig",
       "libpcre3-dev",
-      "zlib1g-dev"
+      "zlib1g-dev",
+      "libmupdf-dev",
+      "libfreetype6-dev",
+      "libopenjp2-7-dev",
+      "libjbig2dec0-dev"
     ],
     "python": {
       "version": "3.11"
