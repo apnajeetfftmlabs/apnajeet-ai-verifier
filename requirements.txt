@@ -34,5 +34,5 @@ scipy==1.11.4
 scikit-image==0.22.0
 
 # AI/ML - OCR
-paddlepaddle==2.5.2           # ⬇️ downgrade
-paddleocr==2.7.0.0            # ⬇️ downgrade (yeh PyMuPDF<1.21.0 lega)
+paddlepaddle==2.6.2           # ✅ yeh available hai
+paddleocr==2.7.0.3            # ✅ latest version
