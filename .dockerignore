@@ -1,0 +1,42 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.coverage
+htmlcov
+
+# Virtual Environment
+venv
+env
+ENV
+
+# Environment variables
+.env
+.env.local
+
+# Data
+data/uploads/
+data/logs/
+!data/uploads/.gitkeep
+!data/logs/.gitkeep
+
+# Models
+models/
+!models/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
