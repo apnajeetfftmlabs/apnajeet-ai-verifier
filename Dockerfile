@@ -30,5 +30,5 @@ COPY . .
 # Create upload directory
 RUN mkdir -p data/uploads
 
-# ✅ DIRECT FIX - Use 8000 directly
-CMD uvicorn api.main:app --host 0.0.0.0 --port 8000
+# 🔥 FIXED: Hardcoded port 8080 - NO VARIABLES
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]
