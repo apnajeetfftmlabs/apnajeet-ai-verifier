@@ -30,5 +30,5 @@ COPY . .
 # Create upload directory
 RUN mkdir -p data/uploads
 
-# ✅ FINAL FIX: Use Railway's PORT variable
+# ✅ FINAL FIX: Use shell form for variable expansion
 CMD uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}
