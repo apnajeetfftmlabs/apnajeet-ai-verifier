@@ -1,37 +1,5 @@
 {
   "build": {
-    "builder": "NIXPACKS",
-    "nixPkgs": [
-      "python311",
-      "tesseract",
-      "tesseract.eng",
-      "openssl",
-      "pkg-config",
-      "swig",
-      "pcre",
-      "pcre2",
-      "zlib",
-      "mupdf",
-      "freetype",
-      "openjpeg",
-      "jbig2dec"
-    ],
-    "aptPkgs": [
-      "tesseract-ocr",
-      "tesseract-ocr-eng",
-      "libtesseract-dev",
-      "libleptonica-dev",
-      "build-essential",
-      "swig",
-      "libpcre3-dev",
-      "zlib1g-dev",
-      "libmupdf-dev",
-      "libfreetype6-dev",
-      "libopenjp2-7-dev",
-      "libjbig2dec0-dev"
-    ],
-    "python": {
-      "version": "3.11"
-    }
+    "builder": "DOCKERFILE"
   }
 }
