@@ -12,14 +12,10 @@ python-dotenv==1.0.0
 # Firebase
 firebase-admin==6.2.0
 
-# PyTorch CPU (size optimized)
-torch==2.2.0 --index-url https://download.pytorch.org/whl/cpu
-torchvision==0.17.0 --index-url https://download.pytorch.org/whl/cpu
-
-# OCR - pytesseract (lightweight)
-pytesseract==0.3.10
-
 # Image Processing
 opencv-python-headless==4.8.1.78
 numpy==1.26.0
 Pillow==10.1.0
+
+# OCR (lightweight)
+pytesseract==0.3.10
