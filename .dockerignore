@@ -1,0 +1,50 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.coverage
+htmlcov
+*.egg-info
+dist
+build
+
+# Virtual Environment
+venv
+env
+ENV
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Data
+data/uploads/
+data/logs/
+!data/uploads/.gitkeep
+!data/logs/.gitkeep
+
+# Models
+models/
+!models/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Railway
+railway.json
