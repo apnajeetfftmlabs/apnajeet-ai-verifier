@@ -1,8 +1,23 @@
 {
   "build": {
-    "builder": "DOCKERFILE"
+    "builder": "NIXPACKS",
+    "python": {
+      "version": "3.11"
+    },
+    "nixPkgs": [
+      "python311",
+      "tesseract",
+      "tesseract.eng",
+      "openssl",
+      "pkg-config",
+      "libGL",
+      "mesa"
+    ]
   },
   "deploy": {
+    "startCommand": "uvicorn api.main:app --host 0.0.0.0 --port 8080",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 300,
     "restartPolicyType": "on_failure",
     "restartPolicyMaxRetries": 10
   }
