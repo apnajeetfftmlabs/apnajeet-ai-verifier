@@ -1,10 +1,10 @@
-# [Filename: telegram-bot/bot.py] - 3-Image Version
+# [Filename: telegram-bot/bot.py] - FIXED VERSION
 import os
 import logging
 from flask import Flask, request
 import httpx
 import asyncio
-from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 
 # Logging
@@ -173,14 +173,25 @@ conv_handler = ConversationHandler(
 telegram_app.add_handler(conv_handler)
 telegram_app.add_handler(CommandHandler('help', help_command))
 
-# ============ WEBHOOK SETUP (Same as before) ============
+# ============ FIXED WEBHOOK FUNCTION ============
 
 @app.route(f"/webhook/{TOKEN}", methods=["POST"])
 def webhook():
+    """Telegram webhook - FIXED with await"""
     update_data = request.get_json()
     update = Update.de_json(update_data, telegram_app.bot)
-    asyncio.run_coroutine_threadsafe(telegram_app.process_update(update), telegram_app.loop)
-    return "OK", 200
+    
+    # ✅ CRITICAL FIX: Create task and await properly
+    try:
+        # Create and run the coroutine
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(telegram_app.process_update(update))
+        loop.close()
+        return "OK", 200
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return "Error", 500
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -191,13 +202,24 @@ def root():
     return {"service": "Telegram Bot", "status": "running", "mode": "3-image"}, 200
 
 def set_webhook():
+    """Set webhook on startup"""
     import requests
-    railway_url = os.getenv("RAILWAY_PUBLIC_URL", f"https://{os.getenv('RAILWAY_STATIC_URL', 'localhost')}")
+    railway_url = "https://protective-fulfillment-production-be90.up.railway.app"
     webhook_url = f"{railway_url}/webhook/{TOKEN}"
-    requests.get(f"https://api.telegram.org/bot{TOKEN}/deleteWebhook")
-    response = requests.get(f"https://api.telegram.org/bot{TOKEN}/setWebhook", params={"url": webhook_url})
-    logger.info(f"Webhook set: {response.json()}")
+    
+    logger.info(f"Setting webhook to: {webhook_url}")
+    
+    # Delete old webhook
+    del_resp = requests.get(f"https://api.telegram.org/bot{TOKEN}/deleteWebhook?drop_pending_updates=true")
+    logger.info(f"Delete response: {del_resp.json()}")
+    
+    # Set new webhook
+    set_resp = requests.get(f"https://api.telegram.org/bot{TOKEN}/setWebhook", params={"url": webhook_url})
+    logger.info(f"Set response: {set_resp.json()}")
 
 if __name__ == "__main__":
+    # Set webhook on startup
     set_webhook()
+    
+    # Start Flask app
     app.run(host="0.0.0.0", port=PORT)
