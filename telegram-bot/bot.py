@@ -1,4 +1,4 @@
-# [Filename: telegram-bot/bot.py] - FIXED VERSION
+# [Filename: telegram-bot/bot.py] - FINAL FIXED VERSION
 import os
 import logging
 from flask import Flask, request
@@ -22,8 +22,17 @@ PROFILE, EMAIL, AD = range(3)
 # Flask app
 app = Flask(__name__)
 
-# Telegram app
+# ============ TELEGRAM APP SETUP ============
+
+# Create application
 telegram_app = Application.builder().token(TOKEN).build()
+
+# CRITICAL FIX: Initialize the application
+import asyncio
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+loop.run_until_complete(telegram_app.initialize())
+logger.info("✅ Telegram application initialized")
 
 # User data storage (temporary)
 user_screenshots = {}
@@ -158,8 +167,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode='Markdown'
     )
 
-# Create conversation handler
-conv_handler = ConversationHandler(
+# Register handlers
+telegram_app.add_handler(ConversationHandler(
     entry_points=[CommandHandler('start', start)],
     states={
         PROFILE: [MessageHandler(filters.PHOTO, handle_profile)],
@@ -167,27 +176,23 @@ conv_handler = ConversationHandler(
         AD: [MessageHandler(filters.PHOTO, handle_ad)],
     },
     fallbacks=[CommandHandler('cancel', cancel)],
-)
-
-# Register handlers
-telegram_app.add_handler(conv_handler)
+))
 telegram_app.add_handler(CommandHandler('help', help_command))
 
 # ============ FIXED WEBHOOK FUNCTION ============
 
 @app.route(f"/webhook/{TOKEN}", methods=["POST"])
 def webhook():
-    """Telegram webhook - FIXED with await"""
+    """Telegram webhook - FIXED with proper async handling"""
     update_data = request.get_json()
     update = Update.de_json(update_data, telegram_app.bot)
     
-    # ✅ CRITICAL FIX: Create task and await properly
     try:
-        # Create and run the coroutine
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(telegram_app.process_update(update))
-        loop.close()
+        # Run the update processing in the existing loop
+        asyncio.run_coroutine_threadsafe(
+            telegram_app.process_update(update),
+            loop
+        )
         return "OK", 200
     except Exception as e:
         logger.error(f"Webhook error: {e}")
