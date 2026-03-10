@@ -1,11 +1,11 @@
+# telegram-bot/Dockerfile - SIMPLE VERSION
 FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements-aiohttp.txt requirements.txt
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ✅ File name sahi karo
-COPY bot_aiohttp.py bot.py
+COPY bot.py .
 
 CMD python bot.py
