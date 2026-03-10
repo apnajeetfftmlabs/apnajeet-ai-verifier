@@ -1,0 +1,19 @@
+# [Filename: video-processor/.dockerignore]
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+.env
+.git
+.gitignore
+README.md
+.vscode
+.idea
+tests
+*.log
