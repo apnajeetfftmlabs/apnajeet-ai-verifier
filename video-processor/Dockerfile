@@ -1,6 +1,5 @@
 FROM python:3.11-slim
 
-# System dependencies
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     tesseract-ocr-eng \
@@ -13,8 +12,13 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Test imports at build time
+RUN python -c "import cv2, numpy, pytesseract, fastapi, firebase_admin"
+
 COPY processor.py .
 COPY firebase_client.py .
 
-# Critical: Explicit port and debug
+EXPOSE 8080
+
+# Start uvicorn with debug logs
 CMD ["uvicorn", "processor:app", "--host", "0.0.0.0", "--port", "8080", "--log-level", "info"]
