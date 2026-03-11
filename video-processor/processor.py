@@ -1,52 +1,18 @@
-# [Filename: video-processor/processor.py] - FINAL WORKING VERSION
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+# [Filename: video-processor/processor.py] - FINAL WITH IMPROVED MATCHING
+from fastapi import FastAPI, UploadFile, File
 import cv2
 import numpy as np
 import pytesseract
 import re
 from datetime import datetime
 import logging
-import os
 from firebase_client import FirebaseClient
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="ApnaJeet Video Processor")
-
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Initialize Firebase
+app = FastAPI()
 firebase = FirebaseClient()
-
-# Check Tesseract
-try:
-    tesseract_version = pytesseract.get_tesseract_version()
-    logger.info(f"✅ Tesseract version: {tesseract_version}")
-except Exception as e:
-    logger.error(f"❌ Tesseract not found: {e}")
-    logger.error("Install tesseract-ocr in Dockerfile")
-
-@app.get("/health")
-async def health():
-    return {
-        "status": "healthy",
-        "tesseract": str(pytesseract.get_tesseract_version()) if pytesseract else "missing",
-        "firebase": firebase.initialized,
-        "timestamp": datetime.now().isoformat()
-    }
 
 @app.post("/verify-three")
 async def verify_three(
@@ -54,29 +20,25 @@ async def verify_three(
     email: UploadFile = File(...),
     ad: UploadFile = File(...)
 ):
-    """Verify using three images: profile, email, ad"""
     request_id = datetime.now().strftime("%Y%m%d%H%M%S")
     logger.info(f"[{request_id}] Processing 3 images")
     
     try:
-        # Process profile image
-        logger.info(f"[{request_id}] Processing profile: {profile.filename}")
-        profile_text = await process_image_advanced(profile, "profile")
+        # Process profile
+        profile_text = await process_image(profile)
         player_id = extract_player_id(profile_text)
         dob = extract_dob(profile_text)
-        logger.info(f"[{request_id}] Profile text: {profile_text[:200]}...")
+        logger.info(f"[{request_id}] Profile text: {profile_text[:100]}...")
         
-        # Process email image
-        logger.info(f"[{request_id}] Processing email: {email.filename}")
-        email_text = await process_image_advanced(email, "email")
+        # Process email
+        email_text = await process_image(email)
         email_date = extract_date(email_text)
-        logger.info(f"[{request_id}] Email text: {email_text[:200]}...")
+        logger.info(f"[{request_id}] Email text: {email_text[:100]}...")
         
-        # Process ad image
-        logger.info(f"[{request_id}] Processing ad: {ad.filename}")
-        ad_text = await process_image_advanced(ad, "ad")
+        # Process ad
+        ad_text = await process_image(ad)
         ad_date = extract_date(ad_text)
-        logger.info(f"[{request_id}] Ad text: {ad_text[:200]}...")
+        logger.info(f"[{request_id}] Ad text: {ad_text[:100]}...")
         
         # Match with Firebase
         email_match = 0
@@ -85,23 +47,25 @@ async def verify_three(
         if email_date:
             template = firebase.get_email_template(email_date)
             if template:
-                email_match = calculate_match(email_text, template.get('content', ''))
+                email_match = calculate_match(email_text, template)
                 logger.info(f"[{request_id}] Email match: {email_match}%")
+            else:
+                logger.warning(f"[{request_id}] No email template for {email_date}")
         
         if ad_date:
             template = firebase.get_ad_template(ad_date)
             if template:
-                ad_match = calculate_match(ad_text, template.get('content', ''))
+                ad_match = calculate_match(ad_text, template)
                 logger.info(f"[{request_id}] Ad match: {ad_match}%")
+            else:
+                logger.warning(f"[{request_id}] No ad template for {ad_date}")
         
-        # Validate player ID
+        # Validate player
         player_valid = False
         if player_id:
             player_valid = firebase.validate_player(player_id)
-            logger.info(f"[{request_id}] Player valid: {player_valid}")
         
-        # Calculate overall confidence
-        confidence = (email_match + ad_match) / 2 if (email_match + ad_match) > 0 else 0
+        confidence = (email_match + ad_match) / 2
         verified = confidence > 70 and player_valid
         
         result = {
@@ -115,140 +79,89 @@ async def verify_three(
         }
         
         logger.info(f"[{request_id}] Result: {result}")
-        
-        # Save to Firebase
         firebase.save_verification(result)
-        
         return result
         
     except Exception as e:
         logger.error(f"[{request_id}] Error: {e}", exc_info=True)
         return {"error": str(e)}
 
-async def process_image_advanced(file: UploadFile, image_type: str) -> str:
-    """Advanced image processing with multiple OCR attempts"""
-    try:
-        # Read file
-        contents = await file.read()
-        logger.info(f"{image_type} image size: {len(contents)} bytes")
-        
-        if len(contents) < 100:  # Too small
-            logger.error(f"{image_type} image too small")
-            return ""
-        
-        # Convert to image
-        nparr = np.frombuffer(contents, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
-        if img is None:
-            logger.error(f"{image_type} image decode failed")
-            return ""
-        
-        # Try multiple preprocessing techniques
-        texts = []
-        
-        # Method 1: Original grayscale
-        gray1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        text1 = pytesseract.image_to_string(gray1)
-        texts.append(text1)
-        
-        # Method 2: Threshold
-        _, thresh = cv2.threshold(gray1, 150, 255, cv2.THRESH_BINARY)
-        text2 = pytesseract.image_to_string(thresh)
-        texts.append(text2)
-        
-        # Method 3: Resize for better OCR (2x)
-        height, width = gray1.shape
-        resized = cv2.resize(gray1, (width*2, height*2), interpolation=cv2.INTER_CUBIC)
-        text3 = pytesseract.image_to_string(resized)
-        texts.append(text3)
-        
-        # Method 4: Denoise
-        denoised = cv2.fastNlMeansDenoising(gray1, h=30)
-        text4 = pytesseract.image_to_string(denoised)
-        texts.append(text4)
-        
-        # Choose the longest text (usually best)
-        best_text = max(texts, key=len)
-        logger.info(f"{image_type} OCR best length: {len(best_text)}")
-        
-        return best_text
-        
-    except Exception as e:
-        logger.error(f"{image_type} OCR error: {e}")
-        return ""
+async def process_image(file: UploadFile) -> str:
+    contents = await file.read()
+    nparr = np.frombuffer(contents, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # Simple threshold for better OCR
+    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
+    return pytesseract.image_to_string(thresh)
 
 def extract_player_id(text: str) -> str:
-    if not text:
-        return None
-    # Try multiple patterns
-    patterns = [
-        r'\b\d{10}\b',  # Exactly 10 digits
-        r'ID[:\s]*(\d{10})',  # ID: 1234567890
-        r'Player[:\s]*(\d{10})',  # Player: 1234567890
-        r'Phone[:\s]*(\d{10})',  # Phone: 1234567890
-        r'Mobile[:\s]*(\d{10})',  # Mobile: 1234567890
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            return match.group(1) if match.groups() else match.group(0)
-    return None
+    if not text: return None
+    match = re.search(r'\b\d{10}\b', text)
+    return match.group(0) if match else None
 
 def extract_dob(text: str) -> str:
-    if not text:
-        return None
-    # Try DD/MM/YYYY
+    if not text: return None
     match = re.search(r'\b(\d{2}[/-]\d{2}[/-]\d{4})\b', text)
-    if match:
-        return match.group(1)
-    # Try Date: DD/MM/YYYY
-    match = re.search(r'Date[:\s]*(\d{2}[/-]\d{2}[/-]\d{4})', text, re.IGNORECASE)
     return match.group(1) if match else None
 
 def extract_date(text: str) -> str:
-    if not text:
-        return None
-    # Try DD/MM/YYYY
+    if not text: return None
     match = re.search(r'\b(\d{2}[/-]\d{2}[/-]\d{4})\b', text)
     if match:
         return match.group(1)
-    # Try Month DD, YYYY
     match = re.search(r'([A-Z][a-z]+ \d{1,2}, \d{4})', text)
     return match.group(1) if match else None
 
-def calculate_match(text1: str, text2: str) -> int:
-    """Advanced matching with keyword weighting"""
-    if not text1 or not text2:
+def calculate_match(extracted_text: str, template: dict) -> int:
+    """Advanced matching with multiple fields and keyword weighting"""
+    if not extracted_text or not template:
         return 0
     
-    # Convert to lowercase
-    text1_lower = text1.lower()
-    text2_lower = text2.lower()
+    score = 0
+    total_weight = 0
     
-    # Extract key phrases (important words)
-    important_words = ['gold', 'investment', 'bank', 'target', 'record', 'high', 
-                      'price', 'market', 'stock', 'trade', 'club', 'newsletter',
-                      'reader', 'dear', 'cramer', 'stansberry']
+    # Combine all template fields
+    template_text = ' '.join(filter(None, [
+        template.get('subject', ''),
+        template.get('sender', ''),
+        template.get('content', ''),
+        template.get('headline', ''),
+        template.get('description', ''),
+        template.get('full_text', '')
+    ])).lower()
     
-    # Calculate word overlap
-    words1 = set(text1_lower.split())
-    words2 = set(text2_lower.split())
+    extracted_lower = extracted_text.lower()
     
-    common_words = words1.intersection(words2)
-    common_count = len(common_words)
+    # Important keywords with weights
+    keywords = {
+        'gold': 10, 'investment': 8, 'bank': 8, 'target': 8,
+        'record': 6, 'high': 5, 'price': 5, 'market': 5,
+        'stock': 5, 'trade': 5, 'club': 5, 'newsletter': 8,
+        'reader': 3, 'dear': 3, 'cramer': 10, 'stansberry': 10,
+        'elite': 8, 'pre-market': 8, 'closing bell': 8,
+        'subscribe': 5, 'free': 5, 'email': 3
+    }
     
-    # Give extra weight to important words
-    important_common = [w for w in common_words if w in important_words]
-    important_score = len(important_common) * 10  # Each important word = 10%
+    # Check for keywords
+    for word, weight in keywords.items():
+        if word in extracted_lower and word in template_text:
+            score += weight
+            total_weight += weight
     
-    # Base score from word overlap
-    if len(words2) > 0:
-        base_score = (common_count / len(words2)) * 100
+    # Word overlap percentage
+    words_extracted = set(extracted_lower.split())
+    words_template = set(template_text.split())
+    if words_template:
+        overlap = len(words_extracted.intersection(words_template))
+        overlap_score = (overlap / len(words_template)) * 30  # max 30%
+        score += overlap_score
+        total_weight += 30
+    
+    # Normalize
+    if total_weight > 0:
+        final_score = min(int((score / total_weight) * 100), 100)
     else:
-        base_score = 0
+        final_score = 0
     
-    # Final score (capped at 100)
-    final_score = min(base_score + important_score, 100)
-    
-    return int(final_score)
+    return final_score
