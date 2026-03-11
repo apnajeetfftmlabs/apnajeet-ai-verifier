@@ -11,11 +11,20 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-firebase = FirebaseClient()
+
+# Initialize Firebase safely
+try:
+    firebase = FirebaseClient()
+except Exception as e:
+    logger.error(f"Firebase init failed: {e}")
+    firebase = None
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy", "firebase": firebase.initialized}
+    if firebase:
+        return {"status": "healthy", "firebase": firebase.initialized}
+    else:
+        return {"status": "healthy", "firebase": False}
 
 @app.post("/verify-three")
 async def verify_three(
@@ -44,7 +53,7 @@ async def verify_three(
     email_match = 0
     ad_match = 0
     
-    if email_date:
+    if email_date and firebase:
         # Convert DD/MM/YYYY to YYYY-MM-DD for Firebase
         date_key = email_date
         if '/' in email_date:
@@ -57,7 +66,7 @@ async def verify_three(
             logger.info(f"[{request_id}] Email template found")
             email_match = calculate_match(email_text, template)
     
-    if ad_date:
+    if ad_date and firebase:
         date_key = ad_date
         if '/' in ad_date:
             parts = ad_date.split('/')
@@ -71,7 +80,7 @@ async def verify_three(
     
     # Validate player
     player_valid = False
-    if player_id:
+    if player_id and firebase:
         player_valid = firebase.validate_player(player_id)
     
     confidence = (email_match + ad_match) / 2 if (email_match + ad_match) > 0 else 85 if player_id else 0
@@ -83,11 +92,13 @@ async def verify_three(
         "email_match": email_match,
         "ad_match": ad_match,
         "confidence": confidence,
-        "verified": verified
+        "verified": verified,
+        "timestamp": datetime.now().isoformat()
     }
     
     logger.info(f"[{request_id}] Result: {result}")
-    firebase.save_verification(result)
+    if firebase:
+        firebase.save_verification(result)
     return result
 
 async def process_image(file: UploadFile) -> str:
