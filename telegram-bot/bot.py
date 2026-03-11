@@ -1,4 +1,4 @@
-# [Filename: telegram-bot/bot_aiohttp.py]
+# [Filename: telegram-bot/bot_aiohttp.py] - Fixed
 import os
 import logging
 from aiohttp import web
@@ -6,22 +6,16 @@ import httpx
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 
-# Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Config
 TOKEN = os.getenv("BOT_TOKEN")
 PROCESSOR_URL = os.getenv("PROCESSOR_URL", "https://apnajeet-ai-verifier-production-e660.up.railway.app")
 PORT = int(os.getenv("PORT", 8080))
 
-# Conversation states
 PROFILE, EMAIL, AD = range(3)
 
-# Initialize bot application
 application = Application.builder().token(TOKEN).build()
-
-# User data storage
 user_screenshots = {}
 
 # ============ HANDLERS ============
@@ -30,7 +24,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
     user_screenshots[user_id] = {'profile': None, 'email': None, 'ad': None}
-    
     await update.message.reply_text(
         f"👋 Hi {user.first_name}!\n\n"
         "📸 *3-Step Verification Process*\n\n"
@@ -49,7 +42,6 @@ async def handle_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file = await context.bot.get_file(photo.file_id)
     photo_bytes = await file.download_as_bytearray()
     user_screenshots[user_id]['profile'] = photo_bytes
-    
     await update.message.reply_text(
         "✅ Profile received!\n\nNow send **EMAIL** screenshot:",
         parse_mode='Markdown'
@@ -62,7 +54,6 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file = await context.bot.get_file(photo.file_id)
     photo_bytes = await file.download_as_bytearray()
     user_screenshots[user_id]['email'] = photo_bytes
-    
     await update.message.reply_text(
         "✅ Email received!\n\nFinally send **AD** screenshot:",
         parse_mode='Markdown'
@@ -75,19 +66,22 @@ async def handle_ad(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file = await context.bot.get_file(photo.file_id)
     photo_bytes = await file.download_as_bytearray()
     user_screenshots[user_id]['ad'] = photo_bytes
-    
+
     await update.message.reply_text("📥 Processing 3 images... (10-15 seconds)")
-    
+
     try:
+        # CRITICAL FIX: convert bytearray to bytes
+        files = {
+            'profile': ('profile.jpg', bytes(user_screenshots[user_id]['profile']), 'image/jpeg'),
+            'email': ('email.jpg', bytes(user_screenshots[user_id]['email']), 'image/jpeg'),
+            'ad': ('ad.jpg', bytes(user_screenshots[user_id]['ad']), 'image/jpeg')
+        }
+
         async with httpx.AsyncClient(timeout=60.0) as client:
-            files = {
-                'profile': ('profile.jpg', user_screenshots[user_id]['profile'], 'image/jpeg'),
-                'email': ('email.jpg', user_screenshots[user_id]['email'], 'image/jpeg'),
-                'ad': ('ad.jpg', user_screenshots[user_id]['ad'], 'image/jpeg')
-            }
-            
+            logger.info(f"Sending to {PROCESSOR_URL}/verify-three")
             response = await client.post(f"{PROCESSOR_URL}/verify-three", files=files)
-            
+            logger.info(f"Response status: {response.status_code}")
+
             if response.status_code == 200:
                 result = response.json()
                 msg = (
@@ -101,11 +95,11 @@ async def handle_ad(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 await update.message.reply_text(msg, parse_mode='Markdown')
             else:
-                await update.message.reply_text("❌ Processing failed")
+                await update.message.reply_text(f"❌ Processing failed with status {response.status_code}")
     except Exception as e:
-        logger.error(f"Error: {e}")
-        await update.message.reply_text("❌ Error occurred")
-    
+        logger.error(f"Error in handle_ad: {e}", exc_info=True)
+        await update.message.reply_text(f"❌ Error: {str(e)}")
+
     del user_screenshots[user_id]
     return ConversationHandler.END
 
@@ -166,23 +160,16 @@ async def root_handler(request):
 # ============ MAIN ============
 
 async def main():
-    # Initialize bot
     await init_app()
-    
-    # Setup web app
     web_app = web.Application()
     web_app.router.add_post(f"/webhook/{TOKEN}", webhook_handler)
     web_app.router.add_get("/health", health_handler)
     web_app.router.add_get("/", root_handler)
-    
-    # Start server
     runner = web.AppRunner(web_app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", PORT)
     await site.start()
     logger.info(f"🚀 Server running on port {PORT}")
-    
-    # Keep running
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
