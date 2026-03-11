@@ -11,14 +11,20 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# Copy requirements first
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy all code
 COPY processor.py .
 COPY firebase_client.py .
 
-# Debug: print environment and files
-RUN echo "=== CONTAINER CONTENTS ===" && ls -la
+# Debug: Check imports
+RUN python -c "import cv2, numpy, pytesseract, firebase_admin; print('✅ All imports OK')"
+RUN python -c "from firebase_client import FirebaseClient; print('✅ FirebaseClient import OK')"
 
-# Start with debug output
+# Test Firebase init (will fail if env vars missing, but we catch it)
+RUN python -c "import os; print(f'FIREBASE_DATABASE_URL: {os.getenv(\"FIREBASE_DATABASE_URL\", \"NOT SET\")}')"
+
+# Start with maximum logging
 CMD uvicorn processor:app --host 0.0.0.0 --port 8080 --log-level debug
