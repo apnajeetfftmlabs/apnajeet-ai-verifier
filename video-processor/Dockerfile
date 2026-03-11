@@ -6,24 +6,19 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr-eng \
     libgl1 \
     libglib2.0-0 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy requirements first (for caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
 COPY processor.py .
 COPY firebase_client.py .
 
-# Make sure port is exposed
-EXPOSE 8080
+# Debug: print environment and files
+RUN echo "=== CONTAINER CONTENTS ===" && ls -la
 
-# Health check instruction
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
-
-# Start the application with explicit port
-CMD uvicorn processor:app --host 0.0.0.0 --port 8080
+# Start with debug output
+CMD uvicorn processor:app --host 0.0.0.0 --port 8080 --log-level debug
